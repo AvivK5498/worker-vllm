@@ -8,14 +8,16 @@ RUN apt-get update -y \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# Install Python dependencies
+# Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
+# Use --torch-backend=auto to let uv select correct PyTorch for CUDA version
+# Per vLLM docs: https://docs.vllm.ai/en/latest/getting_started/installation/gpu
+ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
+ENV UV_TORCH_BACKEND=auto
+RUN uv pip install --system vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}
+
+# Install additional dependencies (after vLLM to avoid torch conflicts)
 COPY builder/requirements.txt /requirements.txt
 RUN uv pip install --system --upgrade -r /requirements.txt
-
-# Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
-# uv gives --extra-index-url higher priority than default index
-ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
-RUN uv pip install --system vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
