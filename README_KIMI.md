@@ -4,7 +4,7 @@ This guide covers deploying Kimi-K2.5 on RunPod Serverless using vLLM 0.14.1.
 
 ## Model Information
 
-- **Model**: `moonshotai/Kimi-K2.5-Instruct`
+- **Model**: `moonshotai/Kimi-K2.5`
 - **Architecture**: Mixture of Experts (MoE)
 - **Context Length**: 131,072 tokens
 - **Recommended Setup**: 8x H100 GPUs with FP8 quantization
@@ -28,7 +28,7 @@ export HF_TOKEN="your_huggingface_token"
 
 docker build \
   --secret id=HF_TOKEN \
-  --build-arg MODEL_NAME="moonshotai/Kimi-K2.5-Instruct" \
+  --build-arg MODEL_NAME="moonshotai/Kimi-K2.5" \
   --build-arg BASE_PATH="/models" \
   --build-arg QUANTIZATION="fp8" \
   -t your-dockerhub/kimi-k2.5-vllm:baked .
@@ -50,7 +50,7 @@ Set the following environment variables in the RunPod endpoint configuration:
 
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `MODEL_NAME` | `moonshotai/Kimi-K2.5-Instruct` | The Kimi-K2.5 model |
+| `MODEL_NAME` | `moonshotai/Kimi-K2.5` | The Kimi-K2.5 model |
 | `HF_TOKEN` | `hf_xxxxx` | Your Hugging Face token |
 | `TENSOR_PARALLEL_SIZE` | `8` | Distribute across 8 GPUs |
 | `QUANTIZATION` | `fp8` | FP8 quantization for memory efficiency |
@@ -95,7 +95,7 @@ client = OpenAI(
 
 # Basic chat completion
 response = client.chat.completions.create(
-    model="moonshotai/Kimi-K2.5-Instruct",
+    model="moonshotai/Kimi-K2.5",
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Explain quantum computing in simple terms."}
@@ -130,7 +130,7 @@ tools = [
 ]
 
 response = client.chat.completions.create(
-    model="moonshotai/Kimi-K2.5-Instruct",
+    model="moonshotai/Kimi-K2.5",
     messages=[{"role": "user", "content": "What's the weather in Tokyo?"}],
     tools=tools,
     tool_choice="auto",
@@ -142,7 +142,7 @@ print(response.choices[0].message.tool_calls)
 
 ```python
 stream = client.chat.completions.create(
-    model="moonshotai/Kimi-K2.5-Instruct",
+    model="moonshotai/Kimi-K2.5",
     messages=[{"role": "user", "content": "Write a short story about AI."}],
     stream=True,
 )
@@ -161,7 +161,7 @@ To use this endpoint with OpenCode or other OpenAI-compatible tools:
 ```bash
 export OPENAI_API_KEY="your_runpod_api_key"
 export OPENAI_BASE_URL="https://api.runpod.ai/v2/{YOUR_ENDPOINT_ID}/openai/v1"
-export OPENAI_MODEL="moonshotai/Kimi-K2.5-Instruct"
+export OPENAI_MODEL="moonshotai/Kimi-K2.5"
 ```
 
 ### OpenCode Configuration
@@ -171,7 +171,7 @@ Add to your OpenCode config:
 ```json
 {
   "provider": "openai",
-  "model": "moonshotai/Kimi-K2.5-Instruct",
+  "model": "moonshotai/Kimi-K2.5",
   "apiKey": "your_runpod_api_key",
   "baseUrl": "https://api.runpod.ai/v2/{YOUR_ENDPOINT_ID}/openai/v1"
 }
