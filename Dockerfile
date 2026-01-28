@@ -11,8 +11,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install --upgrade -r /requirements.txt
 
-# Install latest vLLM for Kimi-K2.5 multimodal support
-RUN python3 -m pip install vllm
+# Install vLLM nightly for Kimi-K2.5 (KimiK25ForConditionalGeneration) support
+RUN python3 -m pip install vllm-nightly
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
