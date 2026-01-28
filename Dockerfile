@@ -2,18 +2,20 @@
 FROM nvidia/cuda:12.9.0-base-ubuntu22.04
 
 RUN apt-get update -y \
-    && apt-get install -y python3-pip python3-venv
+    && apt-get install -y python3-pip python3-venv curl
+
+# Install uv (faster package manager, recommended by vLLM)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
 
 # Install Python dependencies
 COPY builder/requirements.txt /requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m pip install --upgrade pip && \
-    python3 -m pip install --upgrade -r /requirements.txt
+RUN uv pip install --system --upgrade -r /requirements.txt
 
 # Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
-# https://wheels.vllm.ai provides prebuilt wheels for every commit
+# uv gives --extra-index-url higher priority than default index
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
-RUN pip install https://wheels.vllm.ai/${VLLM_COMMIT}/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl
+RUN uv pip install --system vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
