@@ -1,10 +1,8 @@
-# Use CUDA devel image (has nvcc and all build tools)
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
+# Use CUDA 12.9 devel image (vLLM requires CUDA 12.9)
+FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
 
 RUN apt-get update -y \
-    && apt-get install -y python3-pip git
-
-RUN ldconfig /usr/local/cuda-12.4/compat/
+    && apt-get install -y python3-pip python3-venv git
 
 # Install Python dependencies
 COPY builder/requirements.txt /requirements.txt
@@ -12,7 +10,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install --upgrade -r /requirements.txt
 
-# Install vLLM from source (includes KimiK25ForConditionalGeneration from PR #33131)
+# Install vLLM build dependencies first, then vLLM from source
+# Kimi-K2.5 support merged in PR #33131
+RUN python3 -m pip install --upgrade torch torchvision
 RUN python3 -m pip install "vllm @ git+https://github.com/vllm-project/vllm.git"
 
 # Setup for Option 2: Building the Image with the Model included
