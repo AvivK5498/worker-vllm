@@ -11,8 +11,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install --upgrade -r /requirements.txt
 
-# Install vLLM nightly for Kimi-K2.5 (KimiK25ForConditionalGeneration) support
-RUN python3 -m pip install vllm-nightly
+# Install vLLM from source for Kimi-K2.5 (KimiK25ForConditionalGeneration) support
+# Support was merged Jan 29, 2026 - not in any stable/nightly release yet
+RUN python3 -m pip install "vllm @ git+https://github.com/vllm-project/vllm.git"
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
