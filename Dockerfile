@@ -1,5 +1,5 @@
-# Use CUDA 12.9 base image (no need for devel - using prebuilt wheel)
-FROM nvidia/cuda:12.9.0-base-ubuntu22.04
+# Use CUDA 12.9 runtime image (includes CUDA runtime libraries needed by PyTorch)
+FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
 
 RUN apt-get update -y \
     && apt-get install -y python3-pip python3-venv curl
@@ -9,11 +9,11 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
-# Use --torch-backend=auto to let uv select correct PyTorch for CUDA version
-# Per vLLM docs: https://docs.vllm.ai/en/latest/getting_started/installation/gpu
+# Explicitly use CUDA 12.9 PyTorch index (can't auto-detect during build - no GPU)
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
-ENV UV_TORCH_BACKEND=auto
-RUN uv pip install --system vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}
+RUN uv pip install --system vllm \
+    --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT} \
+    --extra-index-url https://download.pytorch.org/whl/cu129
 
 # Install additional dependencies (after vLLM to avoid torch conflicts)
 COPY builder/requirements.txt /requirements.txt
