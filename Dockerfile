@@ -11,8 +11,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install --upgrade -r /requirements.txt
 
-# Install vLLM 0.14.1 for Kimi-K2.5 support
-RUN python3 -m pip install vllm==0.14.1
+# Install latest vLLM for Kimi-K2.5 multimodal support
+RUN python3 -m pip install vllm
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
