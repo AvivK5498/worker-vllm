@@ -1,17 +1,19 @@
-# Use official vLLM image and upgrade to latest from git for Kimi-K2.5 support
-FROM vllm/vllm-openai:latest
+# Use CUDA devel image (has nvcc and all build tools)
+FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 
-# Install git for pip git+ installs
-RUN apt-get update -y && apt-get install -y git
+RUN apt-get update -y \
+    && apt-get install -y python3-pip git
 
-# Install additional Python dependencies
+RUN ldconfig /usr/local/cuda-12.4/compat/
+
+# Install Python dependencies
 COPY builder/requirements.txt /requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
+    python3 -m pip install --upgrade pip && \
     python3 -m pip install --upgrade -r /requirements.txt
 
-# Upgrade vLLM to latest from git (includes KimiK25ForConditionalGeneration)
-# Support was merged Jan 27, 2026 in PR #33131
-RUN python3 -m pip install --upgrade --force-reinstall "vllm @ git+https://github.com/vllm-project/vllm.git"
+# Install vLLM from source (includes KimiK25ForConditionalGeneration from PR #33131)
+RUN python3 -m pip install "vllm @ git+https://github.com/vllm-project/vllm.git"
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
