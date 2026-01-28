@@ -1,8 +1,8 @@
-# Use CUDA 12.9 devel image (vLLM requires CUDA 12.9)
-FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
+# Use CUDA 12.9 base image (no need for devel - using prebuilt wheel)
+FROM nvidia/cuda:12.9.0-base-ubuntu22.04
 
 RUN apt-get update -y \
-    && apt-get install -y python3-pip python3-venv git
+    && apt-get install -y python3-pip python3-venv
 
 # Install Python dependencies
 COPY builder/requirements.txt /requirements.txt
@@ -10,10 +10,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install --upgrade -r /requirements.txt
 
-# Install vLLM build dependencies first, then vLLM from source
-# Kimi-K2.5 support merged in PR #33131
-RUN python3 -m pip install --upgrade torch torchvision
-RUN python3 -m pip install "vllm @ git+https://github.com/vllm-project/vllm.git"
+# Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
+# https://wheels.vllm.ai provides prebuilt wheels for every commit
+ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
+RUN pip install https://wheels.vllm.ai/${VLLM_COMMIT}/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
