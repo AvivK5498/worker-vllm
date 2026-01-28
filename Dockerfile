@@ -9,9 +9,11 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
-# Explicitly use CUDA 12.9 PyTorch index (can't auto-detect during build - no GPU)
+# Wheel: vllm-0.14.0rc2.dev375+gb539f988e-cp38-abi3-manylinux_2_31_x86_64.whl
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
 RUN uv pip install --system vllm \
+    --prerelease=allow \
+    --index-strategy unsafe-best-match \
     --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT} \
     --extra-index-url https://download.pytorch.org/whl/cu129
 
