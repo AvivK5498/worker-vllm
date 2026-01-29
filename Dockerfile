@@ -29,12 +29,14 @@ RUN echo "/usr/local/cuda-12.9/compat/" > /etc/ld.so.conf.d/00-cuda-compat.conf 
 # LD_LIBRARY_PATH setup (from vLLM Dockerfile)
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 
+# Install PyTorch 2.9.1 first (exact version required by vLLM commit)
+RUN uv pip install --system torch==2.9.1 \
+    --index-url https://download.pytorch.org/whl/cu129
+
 # Install vLLM from cu129 wheel with Kimi-K2.5 support
-# PyTorch will be installed from cu129 index (torch 2.8.0+)
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
 RUN uv pip install --system vllm \
-    --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}/cu129/ \
-    --extra-index-url https://download.pytorch.org/whl/cu129
+    --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}/cu129/
 
 # Install additional dependencies
 COPY builder/requirements.txt /requirements.txt
