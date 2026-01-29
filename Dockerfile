@@ -1,23 +1,22 @@
-# Match RunPod's approach: CUDA 12.4 base + ldconfig
-FROM nvidia/cuda:12.4.1-base-ubuntu22.04
+# CUDA 12.9 for B200 GPUs
+FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
 
 RUN apt-get update -y \
     && apt-get install -y python3-pip python3-venv git
 
-# CRITICAL: Make CUDA libraries discoverable (RunPod does this)
-RUN ldconfig /usr/local/cuda-12.4/compat/
+# CRITICAL: Make CUDA libraries discoverable
+RUN ldconfig /usr/local/cuda-12.9/compat/
 
-# Install Python dependencies FIRST (including torch with CUDA)
-# This matches RunPod's approach: torch before vLLM
-COPY builder/requirements.txt /requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m pip install --upgrade pip && \
-    python3 -m pip install --upgrade -r /requirements.txt
+# Install PyTorch FIRST with CUDA 12.8 (forward compatible with 12.9)
+RUN pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu128
 
-# Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
-# Using pip (not uv) to match RunPod's simpler approach
+# Install vLLM from cu129 wheel (Kimi-K2.5 support commit)
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
-RUN python3 -m pip install vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}
+RUN pip install vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}/cu129/
+
+# Install additional dependencies (torch already installed above)
+COPY builder/requirements.txt /requirements.txt
+RUN pip install --upgrade -r /requirements.txt
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
