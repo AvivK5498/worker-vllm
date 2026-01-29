@@ -1,22 +1,44 @@
-# CUDA 12.9 for B200 GPUs
-FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
+# CUDA 12.9 for B200 GPUs (matching vLLM's approach)
+FROM nvidia/cuda:12.9.0-base-ubuntu22.04
 
+ARG CUDA_VERSION=12.9
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
 RUN apt-get update -y \
-    && apt-get install -y python3-pip python3-venv git
+    && apt-get install -y --no-install-recommends \
+        python3-pip \
+        python3-venv \
+        git \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# CRITICAL: Make CUDA libraries discoverable
-RUN ldconfig /usr/local/cuda-12.9/compat/
+# Install uv (vLLM's recommended package manager)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
 
-# Install PyTorch FIRST with CUDA 12.8 (forward compatible with 12.9)
-RUN pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu128
+# uv environment settings (from vLLM Dockerfile)
+ENV UV_HTTP_TIMEOUT=500
+ENV UV_INDEX_STRATEGY="unsafe-best-match"
+ENV UV_LINK_MODE=copy
 
-# Install vLLM from cu129 wheel (Kimi-K2.5 support commit)
+# CUDA compatibility (vLLM's approach - write to ld.so.conf.d)
+RUN echo "/usr/local/cuda-12.9/compat/" > /etc/ld.so.conf.d/00-cuda-compat.conf && ldconfig
+
+# LD_LIBRARY_PATH setup (from vLLM Dockerfile)
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+
+# Install vLLM from cu129 wheel with Kimi-K2.5 support
+# PyTorch will be installed from cu129 index (torch 2.8.0+)
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
-RUN pip install vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}/cu129/
+RUN uv pip install --system vllm \
+    --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}/cu129/ \
+    --extra-index-url https://download.pytorch.org/whl/cu129
 
-# Install additional dependencies (torch already installed above)
+# Install additional dependencies
 COPY builder/requirements.txt /requirements.txt
-RUN pip install --upgrade -r /requirements.txt
+RUN uv pip install --system --upgrade -r /requirements.txt
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
