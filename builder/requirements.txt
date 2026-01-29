@@ -11,4 +11,4 @@ hf-transfer
 transformers>=4.57.0
 bitsandbytes>=0.45.0
 kernels
-# torch installed separately in Dockerfile with CUDA index
+# torch/vllm provided by base image
