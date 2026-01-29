@@ -33,7 +33,7 @@ def download(name, revision, type, cache_dir):
         raise ValueError(f"Invalid type: {type}")
     try:
         for pattern_set in pattern_sets:
-            path = snapshot_download(name, revision=revision, cache_dir=cache_dir, 
+            path = snapshot_download(name, revision=revision, cache_dir=cache_dir,
                                     allow_patterns=pattern_set)
             for pattern in pattern_set:
                 if glob.glob(os.path.join(path, pattern)):

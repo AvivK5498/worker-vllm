@@ -1,25 +1,23 @@
-# Use CUDA 12.9 runtime image (includes CUDA runtime libraries needed by PyTorch)
-FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
+# Match RunPod's approach: CUDA 12.4 base + ldconfig
+FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
 RUN apt-get update -y \
-    && apt-get install -y python3-pip python3-venv curl
+    && apt-get install -y python3-pip python3-venv git
 
-# Install uv (faster package manager, recommended by vLLM)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
+# CRITICAL: Make CUDA libraries discoverable (RunPod does this)
+RUN ldconfig /usr/local/cuda-12.4/compat/
+
+# Install Python dependencies FIRST (including torch with CUDA)
+# This matches RunPod's approach: torch before vLLM
+COPY builder/requirements.txt /requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --upgrade -r /requirements.txt
 
 # Install vLLM from prebuilt wheel at commit with Kimi-K2.5 support (PR #33131)
-# Wheel: vllm-0.14.0rc2.dev375+gb539f988e-cp38-abi3-manylinux_2_31_x86_64.whl
+# Using pip (not uv) to match RunPod's simpler approach
 ENV VLLM_COMMIT=b539f988e1eeffe1c39bebbeaba892dc529eefaf
-RUN uv pip install --system vllm \
-    --prerelease=allow \
-    --index-strategy unsafe-best-match \
-    --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT} \
-    --extra-index-url https://download.pytorch.org/whl/cu129
-
-# Install additional dependencies (after vLLM to avoid torch conflicts)
-COPY builder/requirements.txt /requirements.txt
-RUN uv pip install --system --upgrade -r /requirements.txt
+RUN python3 -m pip install vllm --extra-index-url https://wheels.vllm.ai/${VLLM_COMMIT}
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
@@ -38,10 +36,9 @@ ENV MODEL_NAME=$MODEL_NAME \
     HF_DATASETS_CACHE="${BASE_PATH}/huggingface-cache/datasets" \
     HUGGINGFACE_HUB_CACHE="${BASE_PATH}/huggingface-cache/hub" \
     HF_HOME="${BASE_PATH}/huggingface-cache/hub" \
-    HF_HUB_ENABLE_HF_TRANSFER=1 
+    HF_HUB_ENABLE_HF_TRANSFER=1
 
 ENV PYTHONPATH="/:/vllm-workspace"
-
 
 COPY src /src
 RUN --mount=type=secret,id=HF_TOKEN,required=false \
