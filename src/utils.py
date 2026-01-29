@@ -4,15 +4,25 @@ from http import HTTPStatus
 from functools import wraps
 from time import time
 
+logging.basicConfig(level=logging.INFO)
+
+# Initialize with None - will be set if vLLM imports succeed
+random_uuid = None
+SamplingParams = None
+RequestResponseMetadata = None
+ErrorResponse = None
+
 try:
     from vllm.utils import random_uuid
     from vllm import SamplingParams
     # New vLLM versions (0.14+)
     from vllm.entrypoints.openai.engine.protocol import RequestResponseMetadata, ErrorResponse
-except ImportError:
-    logging.warning("Error importing vllm, skipping related imports. This is ONLY expected when baking model into docker image from a machine without GPUs")
-
-logging.basicConfig(level=logging.INFO)
+    logging.info("vLLM imports successful")
+except ImportError as e:
+    logging.error(f"Error importing vllm: {e}")
+    logging.error("This should NOT happen on a GPU machine. Check vLLM installation.")
+    import traceback
+    traceback.print_exc()
 
 # Updated to parse multiple comma-separated multimodal limits (e.g., 'image=1,video=0')
 def convert_limit_mm_per_prompt(input_string: str):
